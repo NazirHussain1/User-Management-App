@@ -10,8 +10,8 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-gray-100 min-h-screen">
         {/* Navbar */}
-        <header className="bg-blue-600 text-white p-4 shadow-md">
-          <h1 className="text-xl font-bold">User Management</h1>
+        <header className="bg-gray-100  p-2 shadow-md">
+          <h1 className="text-xl text-primary font-bold">User Management</h1>
         </header>
 
         {/* Main content */}
@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
 
         {/* Footer */}
         <footer className="bg-gray-200 text-gray-700 p-4 text-center mt-10">
-          &copy; 2025 MyApp. All rights reserved.
+          &copy; 2025 User Management. All rights reserved.
         </footer>
       </body>
     </html>

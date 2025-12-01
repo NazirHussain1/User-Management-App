@@ -1,12 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({ name: "", email: "", age: "" });
   const [loading, setLoading] = useState(false);
-  const [editUser, setEditUser] = useState(null); // User currently being edited
+  const [editUser, setEditUser] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    userId: null,
+  });
 
   // Fetch all users
   const getUsers = async () => {
@@ -21,6 +26,16 @@ export default function UsersPage() {
     getUsers();
   }, []);
 
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => {
+        setToast({ ...toast, show: false });
+      }, 1000); // 1000ms = 1 second
+
+      return () => clearTimeout(timer); // cleanup on unmount or next toast
+    }
+  }, [toast.show]);
+
   // Create User
   const createUser = async (e) => {
     e.preventDefault();
@@ -33,16 +48,25 @@ export default function UsersPage() {
     });
     setForm({ name: "", email: "", age: "" });
     getUsers();
+    setToast({
+      show: true,
+      message: "User added successfully!",
+      type: "success",
+    });
   };
 
   // Delete User
   const deleteUser = async (id) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-
     const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
     const data = await res.json();
-    if (res.ok) setUsers(users.filter(u => u._id !== id));
+    if (res.ok) setUsers(users.filter((u) => u._id !== id));
     else alert(data.message);
+
+    setToast({
+      show: true,
+      message: "User deleted successfully!",
+      type: "danger",
+    });
   };
 
   // Open Edit Modal
@@ -64,7 +88,12 @@ export default function UsersPage() {
     });
     const data = await res.json();
     if (res.ok) {
-      setUsers(users.map(u => u._id === editUser._id ? editUser : u));
+      setUsers(users.map((u) => (u._id === editUser._id ? editUser : u)));
+      setToast({
+        show: true,
+        message: "User updated successfully!",
+        type: "success",
+      });
       setEditUser(null); // Close modal
     } else {
       alert(data.message);
@@ -72,7 +101,7 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-2">
       <h1 className="text-center mb-4">User Management</h1>
 
       {/* Create User Form */}
@@ -118,7 +147,7 @@ export default function UsersPage() {
         <p className="text-center">Loading...</p>
       ) : (
         <div className="row g-3">
-          {users.map(u => (
+          {users.map((u) => (
             <div className="col-md-4" key={u._id}>
               <div className="card h-100 shadow-sm">
                 <div className="card-body d-flex flex-column justify-content-between">
@@ -136,7 +165,9 @@ export default function UsersPage() {
                     </button>
                     <button
                       className="btn btn-danger btn-sm"
-                      onClick={() => deleteUser(u._id)}
+                      onClick={() =>
+                        setConfirmDelete({ show: true, userId: u._id })
+                      }
                     >
                       Delete
                     </button>
@@ -155,7 +186,10 @@ export default function UsersPage() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Edit User</h5>
-                <button className="btn-close" onClick={() => setEditUser(null)}></button>
+                <button
+                  className="btn-close"
+                  onClick={() => setEditUser(null)}
+                ></button>
               </div>
               <div className="modal-body">
                 <input
@@ -184,9 +218,60 @@ export default function UsersPage() {
                 />
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setEditUser(null)}>Cancel</button>
-                <button className="btn btn-primary" onClick={saveEdit}>Save Changes</button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setEditUser(null)}
+                >
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={saveEdit}>
+                  Save Changes
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast.show && (
+        <div
+          className={`toast align-items-center text-bg-${toast.type} position-fixed top-0 end-0 m-3 show`}
+          role="alert"
+          style={{ zIndex: 1055 }} // ensures it stays on top
+        >
+          <div className="d-flex">
+            <div className="toast-body">{toast.message}</div>
+            <button
+              type="button"
+              className="btn-close btn-close-white me-2 m-auto"
+              onClick={() => setToast({ ...toast, show: false })}
+            ></button>
+          </div>
+        </div>
+      )}
+      {confirmDelete.show && (
+        <div
+          className="toast align-items-center text-bg-warning position-fixed top-0 end-0 m-3 show"
+          style={{ zIndex: 1055 }}
+        >
+          <div className="d-flex flex-column p-2">
+            <div>Are you sure you want to delete this user?</div>
+            <div className="mt-2 d-flex justify-content-end gap-2">
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => setConfirmDelete({ show: false, userId: null })}
+              >
+                No
+              </button>
+              <button
+                className="btn btn-sm btn-danger"
+                onClick={() => {
+                  deleteUser(confirmDelete.userId);
+                  setConfirmDelete({ show: false, userId: null });
+                }}
+              >
+                Yes
+              </button>
             </div>
           </div>
         </div>
